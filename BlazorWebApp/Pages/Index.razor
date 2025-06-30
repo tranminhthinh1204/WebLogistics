@@ -1,0 +1,894 @@
+﻿@page "/"
+@using BlazorWebApp.Services
+@using MainEcommerceService.Models.ViewModel
+@using ProductService.Models.ViewModel
+@inject ProdService ProdService
+@inject CategoryService CategoryService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<PageTitle>TechMart - Premium Technology Store | Latest Tech & Best Deals</PageTitle>
+<link href="css/index.css" rel="stylesheet" />
+
+<!-- Particle Background -->
+<div class="particle-background" id="particles-js"></div>
+
+<!-- Main Container -->
+<div class="body-container">
+    <!-- Hero Section with Dynamic Content -->
+    <section class="hero-section-redesign">
+        <div class="hero-container">
+            <!-- Hero Content -->
+            <div class="hero-content-wrapper">
+                <div class="hero-text-content">
+                    <div class="hero-badge animate-slide-down">
+                        <i class="fas fa-bolt"></i>
+                        Tech Revolution 2025
+                    </div>
+                    <h1 class="hero-title animate-slide-up">
+                        Discover the Future of
+                        <span class="gradient-text">Technology</span>
+                    </h1>
+                    <p class="hero-description animate-fade-in">
+                        Premium gadgets, cutting-edge innovations, and unbeatable deals. 
+                        Your one-stop destination for the latest technology products.
+                    </p>
+                    
+                    <!-- Hero Stats -->
+                    <div class="hero-stats animate-slide-up">
+                        <div class="stat-item">
+                            <span class="stat-number">@(allProducts?.Count() ?? 0)+</span>
+                            <span class="stat-label">Products</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number">50+</span>
+                            <span class="stat-label">Brands</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number">25K+</span>
+                            <span class="stat-label">Customers</span>
+                        </div>
+                    </div>
+
+                    <!-- Hero CTA -->
+                    <div class="hero-actions animate-bounce-in">
+                        <button class="btn-primary-hero" @onclick="@(() => NavigateToCategory("all"))">
+                            <i class="fas fa-shopping-bag"></i>
+                            Explore Collection
+                            <span class="btn-shine"></span>
+                        </button>
+                        <button class="btn-secondary-hero" @onclick="ScrollToDeals">
+                            <i class="fas fa-fire"></i>
+                            View Deals
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Hero Visual với Enhanced 2D Showcase -->
+                <div class="hero-visual">
+                    <div class="product-showcase-2d">
+                        @if (featuredProducts != null && featuredProducts.Any())
+                        {
+                            @foreach (var (product, index) in GetRandomizedFeaturedProducts().Take(3).Select((p, i) => (p, i)))
+                            {
+                                <div class="product-card-2d" @onclick="() => NavigateToProduct(product.ProductId)">
+                                    <img src="@GetProductImageUrl(product)" alt="@product.ProductName" class="product-image-2d" />
+                                    <div class="product-info-2d">
+                                        <h5>@TruncateProductName(product.ProductName, 25)</h5>
+                                            <span class="price-old">$@product.Price.ToString("F2")</span>
+                                        <div class="product-price-2d">
+                                            $@(product.DiscountPrice?.ToString("F0") ?? product.Price.ToString("F0"))
+                                        </div>
+                                        <button class="product-cta-2d" @onclick:stopPropagation="true">
+                                            <i class="fas fa-eye"></i>
+                                            View
+                                        </button>
+                                    </div>
+                                </div>
+                            }
+                        }
+                    </div>
+                    
+                    <!-- Enhanced Decorative Elements -->
+                    <div class="showcase-decorations">
+                        <div class="decoration-circle"></div>
+                        <div class="decoration-circle"></div>
+                        <div class="decoration-circle"></div>
+                        <div class="decoration-circle"></div>
+                    </div>
+                    
+                    <!-- Animated Geometric Shapes -->
+                    <div class="animated-shapes">
+                        <div class="geometric-shape shape-triangle"></div>
+                        <div class="geometric-shape shape-square"></div>
+                        <div class="geometric-shape shape-hexagon"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scroll Indicator -->
+        <div class="scroll-indicator" @onclick="ScrollToCategories">
+            <div class="scroll-icon">
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <span>Discover More</span>
+        </div>
+    </section>
+
+    <!-- Enhanced Categories Section -->
+    <section class="categories-section-redesign" id="categories">
+        <div class="container">
+            <!-- Section Header -->
+            <div class="section-header text-center">
+                <span class="section-badge">Browse Categories</span>
+                <h2 class="section-title">
+                    Shop by <span class="gradient-text">Category</span>
+                </h2>
+                <p class="section-subtitle">
+                    Discover cutting-edge technology across all your favorite categories
+                </p>
+            </div>
+
+            @if (isLoadingCategories)
+            {
+                <div class="loading-skeleton">
+                    @for (int i = 0; i < 4; i++)
+                    {
+                        <div class="skeleton-card"></div>
+                    }
+                </div>
+            }
+            else if (mainCategories != null && mainCategories.Any())
+            {
+                <div class="categories-grid-redesign">
+                    @foreach (var (category, index) in GetVisibleCategories().Select((c, i) => (c, i)))
+                    {
+                        <div class="category-card-redesign @(index < initialCategoryCount ? "category-item-visible" : "category-item-hidden")" 
+                             style="animation-delay: @((index * 0.2))s"
+                             @onclick="() => NavigateToCategory(category.CategoryName)">
+                            
+                            <div class="category-background">
+                                <div class="category-pattern"></div>
+                                <div class="category-glow"></div>
+                            </div>
+                            
+                            <div class="category-content">
+                                <div class="category-icon-wrapper">
+                                    <i class="@GetCategoryIcon(category.CategoryName)"></i>
+                                </div>
+                                
+                                <div class="category-info">
+                                    <h3 class="category-title">@category.CategoryName</h3>
+                                    <p class="category-description">@GetCategoryDescription(category.CategoryName)</p>
+                                    <span class="category-count">@GetCategoryProductCount(category.CategoryId) products</span>
+                                </div>
+                                
+                                @if (GetCategoryDiscount(category.CategoryId) > 0)
+                                {
+                                <div class="category-discount">@GetCategoryDiscount(category.CategoryId)% Off</div>
+                                }
+                                
+                                <div class="category-arrow">
+                                    <i class="fas fa-arrow-right"></i>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                @if (categories != null && categories.Count() > initialCategoryCount)
+                {
+                    <div class="show-more-container">
+                        <button class="btn-show-more @(showAllCategories ? "btn-show-less" : "")" 
+                                @onclick="ToggleShowAllCategories">
+                            @if (showAllCategories)
+                            {
+                                <i class="fas fa-chevron-up"></i>
+                                <span>Show Less</span>
+                            }
+                            else
+                            {
+                                <i class="fas fa-chevron-down"></i>
+                                <span>Show More (@(categories.Count() - initialCategoryCount) more)</span>
+                            }
+                        </button>
+                    </div>
+                }
+            }
+        </div>
+    </section>
+
+    <!-- Flash Deals Section - Updated carousel -->
+    <section class="deals-section-redesign" id="deals">
+        <div class="container">
+            <div class="deals-header">
+                <div class="deals-info">
+                    <span class="deals-badge">
+                        <i class="fas fa-bolt"></i>
+                        Flash Deals
+                    </span>
+                    <h2 class="deals-title">Limited Time Offers</h2>
+                    <p class="deals-subtitle">Don't miss out on these amazing tech deals!</p>
+                </div>
+                
+                <!-- Enhanced Countdown -->
+                <div class="countdown-timer">
+                    <div class="timer-label">Deals end in:</div>
+                    <div class="countdown-display">
+                        @if (timeLeft.Days > 0)
+                        {
+                            <div class="time-unit">
+                                <span class="time-number">@timeLeft.Days.ToString("D2")</span>
+                                <span class="time-label">Days</span>
+                            </div>
+                            <span class="time-separator">:</span>
+                        }
+                        <div class="time-unit">
+                            <span class="time-number">@timeLeft.Hours.ToString("D2")</span>
+                            <span class="time-label">Hours</span>
+                        </div>
+                        <span class="time-separator">:</span>
+                        <div class="time-unit">
+                            <span class="time-number">@timeLeft.Minutes.ToString("D2")</span>
+                            <span class="time-label">Minutes</span>
+                        </div>
+                        <span class="time-separator">:</span>
+                        <div class="time-unit">
+                            <span class="time-number">@timeLeft.Seconds.ToString("D2")</span>
+                            <span class="time-label">Seconds</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @if (isLoadingProducts)
+            {
+                <div class="products-loading">
+                    @for (int i = 0; i < 4; i++)
+                    {
+                        <div class="product-skeleton"></div>
+                    }
+                </div>
+            }
+            else if (dealProducts != null && dealProducts.Any())
+            {
+                <div class="deals-carousel">
+                    <div class="carousel-controls">
+                        <button class="carousel-btn prev" @onclick="SlidePrev">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <button class="carousel-btn next" @onclick="SlideNext">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="products-carousel-track">
+                        @foreach (var product in GetVisibleProducts())
+                        {
+                            <div class="product-card-redesign">
+                                <!-- Product Badge -->
+                                @if (HasDiscount(product))
+                                {
+                                    <div class="product-badge discount">
+                                        <span>-@GetDiscountPercentage(product)%</span>
+                                    </div>
+                                }
+                                else if (IsNewProduct(product.CreatedAt))
+                                {
+                                    <div class="product-badge new">
+                                        <span>NEW</span>
+                                    </div>
+                                }
+
+                                <!-- Product Image -->
+                                <div class="product-image-wrapper" @onclick="() => NavigateToProduct(product.ProductId)">
+                                    <img src="@GetProductImageUrl(product)" alt="@product.ProductName" />
+                                </div>
+
+                                <!-- Product Info -->
+                                <div class="product-info-redesign">
+                                    <div class="product-category">@GetCategoryName(product)</div>
+                                    <h3 class="product-title" @onclick="() => NavigateToProduct(product.ProductId)">
+                                        @product.ProductName
+                                    </h3>
+                                    
+                                    <!-- Rating -->
+                                    <div class="product-rating">
+                                        @for (int i = 1; i <= 5; i++)
+                                        {
+                                            <i class="@(i <= GetProductRating(product) ? "fas fa-star" : "far fa-star")"></i>
+                                        }
+                                        <span class="rating-text">(@GetReviewCount(product))</span>
+                                    </div>
+
+                                    <!-- Price -->
+                                    <div class="product-pricing">
+                                        @if (HasDiscount(product))
+                                        {
+                                            <span class="price-old">$@product.Price.ToString("F2")</span>
+                                            <span class="price-current">$@product.DiscountPrice?.ToString("F2")</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="price-current">$@product.Price.ToString("F2")</span>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </section>
+
+    <!-- Featured Products Section -->
+    <section class="featured-section-redesign">
+        <div class="container">
+            <div class="section-header text-center">
+                <span class="section-badge">New Arrivals</span>
+                <h2 class="section-title">
+                    Latest <span class="gradient-text">Technology</span>
+                </h2>
+                <p class="section-subtitle">
+                    Discover our newest additions to the tech collection
+                </p>
+            </div>
+
+            <!-- Category Filter Tabs -->
+            <div class="filter-tabs">
+                <button class="filter-tab @(selectedCategoryTab == "all" ? "active" : "")" 
+                        @onclick="@(() => FilterByCategory("all"))">
+                    All Products
+                </button>
+                @if (mainCategories != null)
+                {
+                    @foreach (var category in mainCategories)
+                    {
+                        <button class="filter-tab @(selectedCategoryTab == category.CategoryId.ToString() ? "active" : "")" 
+                                @onclick="() => FilterByCategory(category.CategoryId.ToString())">
+                            @category.CategoryName
+                        </button>
+                    }
+                }
+            </div>
+
+            @if (filteredProducts != null && filteredProducts.Any())
+            {
+                <div class="featured-grid">
+                    @foreach (var (product, index) in GetVisibleFeaturedProducts().Select((p, i) => (p, i)))
+                    {
+                        <div class="featured-product-card @(index < initialFeaturedCount ? "featured-item-visible" : "featured-item-hidden")" 
+                             @onclick="() => NavigateToProduct(product.ProductId)">
+                            @if (HasDiscount(product))
+                            {
+                                <div class="product-badge discount">
+                                    <span>-@GetDiscountPercentage(product)%</span>
+                                </div>
+                            }
+                            else if (IsNewProduct(product.CreatedAt))
+                            {
+                                <div class="product-badge new">
+                                    <span>NEW</span>
+                                </div>
+                            }
+
+                            <div class="featured-image">
+                                <img src="@GetProductImageUrl(product)" alt="@product.ProductName" />
+                            </div>
+
+                            <div class="featured-info">
+                                <div class="product-category">@GetCategoryName(product)</div>
+                                <h3 class="featured-title">@product.ProductName</h3>
+                                
+                                <div class="featured-rating">
+                                    @for (int i = 1; i <= 5; i++)
+                                    {
+                                        <i class="@(i <= GetProductRating(product) ? "fas fa-star" : "far fa-star")"></i>
+                                    }
+                                    <span class="rating-count">(@GetReviewCount(product))</span>
+                                </div>
+
+                                <div class="featured-price">
+                                    @if (HasDiscount(product))
+                                    {
+                                        <span class="old-price">$@product.Price.ToString("F2")</span>
+                                        <span class="current-price">$@product.DiscountPrice?.ToString("F2")</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="current-price">$@product.Price.ToString("F2")</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+                    <div class="show-more-container">
+                        <button class="btn-show-more" @onclick="() => ToggleShowAllFeaturedProducts(selectedCategoryTab)">
+                                <i class="fas fa-chevron-down"></i>
+                                <span>Show More</span>
+                        </button>
+                    </div>
+            }
+        </div>
+    </section>
+
+    <!-- Enhanced Services Section -->
+    <section class="services-section-redesign">
+        <div class="container">
+            <div class="section-header text-center">
+                <span class="section-badge">Why Choose Us</span>
+                <h2 class="section-title">
+                    Premium <span class="gradient-text">Experience</span>
+                </h2>
+            </div>
+
+            <div class="services-grid-redesign">
+                <div class="service-card-redesign">
+                    <div class="service-icon-wrapper">
+                        <i class="fas fa-shipping-fast"></i>
+                    </div>
+                    <h3 class="service-title">Free Delivery</h3>
+                    <p class="service-description">Free shipping on orders over $100 with express delivery options</p>
+                    <div class="service-feature">2-Day Express Available</div>
+                </div>
+
+                <div class="service-card-redesign">
+                    <div class="service-icon-wrapper">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h3 class="service-title">Warranty Protection</h3>
+                    <p class="service-description">Extended warranty and comprehensive protection for all products</p>
+                    <div class="service-feature">Up to 3 Years Coverage</div>
+                </div>
+
+                <div class="service-card-redesign">
+                    <div class="service-icon-wrapper">
+                        <i class="fas fa-headset"></i>
+                    </div>
+                    <h3 class="service-title">24/7 Support</h3>
+                    <p class="service-description">Expert technical support and customer service around the clock</p>
+                    <div class="service-feature">Live Chat Available</div>
+                </div>
+
+                <div class="service-card-redesign">
+                    <div class="service-icon-wrapper">
+                        <i class="fas fa-undo"></i>
+                    </div>
+                    <h3 class="service-title">Easy Returns</h3>
+                    <p class="service-description">30-day hassle-free returns with no restocking fees</p>
+                    <div class="service-feature">No Questions Asked</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Newsletter Section -->
+    <section class="newsletter-section-redesign">
+        <div class="container">
+            <div class="newsletter-content">
+                <div class="newsletter-info">
+                    <h2 class="newsletter-title">Stay Updated</h2>
+                    <p class="newsletter-description">
+                        Get the latest tech news, exclusive deals, and new product launches delivered to your inbox.
+                    </p>
+                    <div class="newsletter-benefits">
+                        <div class="benefit-item">
+                            <i class="fas fa-check"></i>
+                            <span>Exclusive deals & discounts</span>
+                        </div>
+                        <div class="benefit-item">
+                            <i class="fas fa-check"></i>
+                            <span>New product announcements</span>
+                        </div>
+                        <div class="benefit-item">
+                            <i class="fas fa-check"></i>
+                            <span>Tech tips & reviews</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="newsletter-form">
+                    <div class="form-wrapper">
+                        <input type="email" class="newsletter-input" placeholder="Enter your email address" />
+                        <button class="newsletter-btn">
+                            <i class="fas fa-paper-plane"></i>
+                            Subscribe
+                        </button>
+                    </div>
+                    <p class="newsletter-privacy">
+                        We respect your privacy. Unsubscribe at any time.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+@code {
+    private IEnumerable<CategoryVM>? categories;
+    private IEnumerable<CategoryVM>? mainCategories;
+    private IEnumerable<PrdVMWithImages>? allProducts;
+    private IEnumerable<PrdVMWithImages>? dealProducts;
+    private IEnumerable<PrdVMWithImages>? filteredProducts;
+    private IEnumerable<PrdVMWithImages>? featuredProducts;
+    private bool isLoadingCategories = true;
+    private bool isLoadingProducts = true;
+    private string selectedCategoryTab = "all";
+    private DateTime dealEndTime;
+    private TimeSpan timeLeft;
+    private Timer? countdownTimer;
+     private string lastFilteredCategoryId = "";
+    private IEnumerable<PrdVMWithImages>? cachedFilteredProductsByCategory;
+    private IEnumerable<PrdVMWithImages> cachedRandomProducts = new List<PrdVMWithImages>();
+    private DateTime lastRandomizationTime = DateTime.MinValue;
+    private readonly TimeSpan randomizationInterval = TimeSpan.FromSeconds(5);
+    // Main category IDs based on your database
+    private readonly int[] mainCategoryIds = { 5, 6, 7, 8 }; // Laptop, SmartPhone, PC, Apple
+
+    // Pagination and carousel state
+    private int currentSlideIndex = 0;
+    private int totalSlides => dealProducts?.Count() ?? 0;
+    private const int itemsPerSlide = 4;
+
+    // Show More functionality state
+    private bool showAllCategories = false;
+    private bool showAllFeaturedProducts = false;
+    private const int initialCategoryCount = 4;
+    private const int initialFeaturedCount = 8;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Set fixed deal end time - cố định thời gian kết thúc deal
+        await SetDealEndTime();
+        UpdateTimeLeft();
+        
+        await LoadDataAsync();
+        StartCountdown();
+    }
+
+    private async Task SetDealEndTime()
+    {
+        try
+        {
+            // Lấy thời gian từ localStorage nếu có
+            var savedEndTime = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "dealEndTime");
+            
+            if (!string.IsNullOrEmpty(savedEndTime) && DateTime.TryParse(savedEndTime, out DateTime savedTime))
+            {
+                // Nếu deal chưa hết hạn, sử dụng thời gian đã lưu
+                if (savedTime > DateTime.Now)
+                {
+                    dealEndTime = savedTime;
+                    return;
+                }
+            }
+            
+            // Tạo deal mới: kết thúc vào 23:59:59 của ngày hôm nay
+            dealEndTime = DateTime.Today.AddDays(1).AddSeconds(-1);
+            
+            // Lưu vào localStorage
+            await JSRuntime.InvokeVoidAsync("localStorage.setItem", "dealEndTime", dealEndTime.ToString());
+        }
+        catch
+        {
+            // Fallback nếu localStorage không hoạt động
+            dealEndTime = DateTime.Today.AddDays(1).AddSeconds(-1);
+        }
+    }
+
+    private async void UpdateTimeLeft()
+    {
+        var remaining = dealEndTime - DateTime.Now;
+        timeLeft = remaining > TimeSpan.Zero ? remaining : TimeSpan.Zero;
+        
+        // Nếu deal hết hạn, tạo deal mới cho ngày tiếp theo
+        if (timeLeft <= TimeSpan.Zero)
+        {
+            dealEndTime = DateTime.Today.AddDays(1).AddSeconds(-1);
+            timeLeft = dealEndTime - DateTime.Now;
+            
+            // Cập nhật localStorage
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("localStorage.setItem", "dealEndTime", dealEndTime.ToString());
+            }
+            catch { }
+        }
+    }
+
+    private void StartCountdown()
+    {
+        countdownTimer = new Timer(async _ =>
+        {
+            UpdateTimeLeft();
+            await InvokeAsync(StateHasChanged);
+        }, null, TimeSpan.Zero, TimeSpan.FromSeconds(1));
+    }
+    
+
+    private async Task LoadDataAsync()
+    {
+        try
+        {
+            var categoriesTask = CategoryService.GetAllCategoriesAsync();
+            var productsTask = ProdService.GetAllProductsAsync();
+            
+            await Task.WhenAll(categoriesTask, productsTask);
+            
+            categories = await categoriesTask;
+            allProducts = await productsTask;
+            
+            mainCategories = categories?.Where(c => mainCategoryIds.Contains(c.CategoryId))
+                                     .OrderBy(c => Array.IndexOf(mainCategoryIds, c.CategoryId));
+            
+            dealProducts = allProducts?.Where(p => HasDiscount(p))
+                                     .OrderByDescending(p => GetDiscountPercentage(p));
+            
+            featuredProducts = allProducts?.Where(p => IsNewProduct(p.CreatedAt) || p.TotalSold > 50)
+                                         .OrderByDescending(p => p.CreatedAt);
+            
+            await FilterByCategory("all");
+
+            isLoadingCategories = false;
+            isLoadingProducts = false;
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading data: {ex.Message}");
+            isLoadingCategories = false;
+            isLoadingProducts = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task FilterByCategory(string categoryId)
+    {
+        selectedCategoryTab = categoryId;
+        
+        // Chỉ random lại khi chuyển sang category khác
+        if (lastFilteredCategoryId != categoryId)
+        {
+            if (categoryId == "all")
+            {
+                cachedFilteredProductsByCategory = allProducts?.OrderBy(x => Random.Shared.Next()).Take(8).ToList();
+            }
+            else if (int.TryParse(categoryId, out int catId))
+            {
+                cachedFilteredProductsByCategory = allProducts?
+                    .Where(p => p.CategoryId == catId || p.ParentCategoryId == catId)
+                    .OrderBy(x => Random.Shared.Next())
+                    .Take(8)
+                    .ToList();
+            }
+            
+            lastFilteredCategoryId = categoryId;
+        }
+        
+        filteredProducts = cachedFilteredProductsByCategory;
+        StateHasChanged();
+    }
+
+    // Helper Methods
+    private bool HasDiscount(PrdVMWithImages product) =>
+        product.DiscountPrice.HasValue && product.DiscountPrice.Value < product.Price;
+
+    private int GetDiscountPercentage(PrdVMWithImages product)
+    {
+        if (!HasDiscount(product)) return 0;
+        var discount = ((product.Price - product.DiscountPrice.Value) / product.Price) * 100;
+        return (int)Math.Round(discount);
+    }
+
+    private string GetCategoryIcon(string categoryName) =>
+        categoryName.ToLower() switch
+        {
+            "laptop" => "fas fa-laptop",
+            "smartphone" => "fas fa-mobile-alt", 
+            "pc" => "fas fa-desktop",
+            "apple" => "fab fa-apple",
+            _ => "fas fa-microchip"
+        };
+
+    private string GetCategoryDescription(string categoryName) =>
+        categoryName.ToLower() switch
+        {
+            "laptop" => "Portable computers and laptops",
+            "smartphone" => "Mobile phones and smartphones",
+            "pc" => "Desktop computers and workstations", 
+            "apple" => "Apple products and accessories",
+            _ => "Technology products"
+        };
+
+    private int GetCategoryProductCount(int categoryId)
+    {
+        return allProducts?.Count(p => p.CategoryId == categoryId || p.ParentCategoryId == categoryId) ?? 0;
+    }
+
+    private int GetCategoryDiscount(int categoryId)
+    {
+        var categoryProducts = allProducts?.Where(p => p.CategoryId == categoryId || p.ParentCategoryId == categoryId && HasDiscount(p));
+        if (categoryProducts?.Any() == true)
+        {
+            var avgDiscount = categoryProducts.Average(p => GetDiscountPercentage(p));
+            return (int)Math.Round(avgDiscount);
+        }
+        return 0;
+
+    }
+
+    private string GetProductImageUrl(PrdVMWithImages product) =>
+        product.PrimaryImageUrl ?? "images/default-product.png";
+
+    private bool IsNewProduct(DateTime? createdAt) =>
+        createdAt.HasValue && DateTime.Now.Subtract(createdAt.Value).TotalDays <= 60;
+
+    private int GetProductRating(PrdVMWithImages product)
+    {
+        if (product.Price > 1000) return 5;
+        if (product.Price > 500) return 4;
+        if (product.Price > 200) return Random.Shared.Next(3, 5);
+        return Random.Shared.Next(3, 4);
+    }
+
+    private int GetReviewCount(PrdVMWithImages product) =>
+        product.TotalSold ?? Random.Shared.Next(5, 200);
+
+    private string GetCategoryName(PrdVMWithImages product) =>
+        categories?.FirstOrDefault(c => c.CategoryId == product.CategoryId)?.CategoryName ?? "Technology";
+
+    // Navigation & Actions
+    private void NavigateToProduct(int productId) =>
+        Navigation.NavigateTo($"/product/{productId}", forceLoad: true);
+
+    private void NavigateToCategory(string categoryName) =>
+        Navigation.NavigateTo($"/products/{categoryName}", forceLoad: true);
+
+    // Replace JS scrolling with C# navigation
+    private async Task ScrollToCategories()
+    {
+        //Loại bỏ Uri để tránh lỗi khi sử dụng NavigationManager
+        var currentUri = Navigation.Uri;
+        var baseUri = currentUri.Contains('#') ? currentUri.Substring(0, currentUri.IndexOf('#')) : currentUri;
+        await Task.Run(() => Navigation.NavigateTo(baseUri + "#categories", forceLoad: false));
+    }
+
+    private async Task ScrollToDeals()
+    {
+        // Use browser navigation to scroll to anchor
+        var currentUri = Navigation.Uri;
+        var baseUri = currentUri.Contains('#') ? currentUri.Substring(0, currentUri.IndexOf('#')) : currentUri;
+        await Task.Run(() => Navigation.NavigateTo(baseUri + "#deals", forceLoad: false));
+    }
+    // Replace JS carousel with C# logic
+    private async Task SlidePrev()
+    {
+        if (totalSlides > 0)
+        {
+            currentSlideIndex = currentSlideIndex > 0 ? currentSlideIndex - 1 : (totalSlides / itemsPerSlide) - 1;
+            StateHasChanged();
+        }
+    }
+
+    private async Task SlideNext()
+    {
+        if (totalSlides > 0)
+        {
+            currentSlideIndex = (currentSlideIndex + 1) % (totalSlides / itemsPerSlide);
+            StateHasChanged();
+        }
+    }
+
+    // Helper method to get visible products for current slide
+    private IEnumerable<PrdVMWithImages> GetVisibleProducts()
+    {
+        if (dealProducts == null) return new List<PrdVMWithImages>();
+        
+        return dealProducts.Skip(currentSlideIndex * itemsPerSlide).Take(itemsPerSlide);
+    }
+
+
+    private IEnumerable<PrdVMWithImages> GetRandomizedFeaturedProducts()
+    {
+        if (featuredProducts == null) return new List<PrdVMWithImages>();
+        
+        // Check if we need to refresh the randomized products
+        if (DateTime.Now - lastRandomizationTime >= randomizationInterval)
+        {
+            cachedRandomProducts = featuredProducts.Take(3).OrderBy(x => Random.Shared.Next()).ToList();
+            lastRandomizationTime = DateTime.Now;
+        }
+        
+        return cachedRandomProducts;
+    }
+
+    public void Dispose() => countdownTimer?.Dispose();
+
+    // Helper method để truncate product names
+    private string TruncateProductName(string productName, int maxLength)
+    {
+        if (string.IsNullOrEmpty(productName) || productName.Length <= maxLength)
+            return productName ?? "";
+            
+        return productName.Substring(0, maxLength - 3) + "...";
+    }
+
+    // Show More functionality methods
+    private async Task ToggleShowAllCategories()
+    {
+        showAllCategories = !showAllCategories;
+        StateHasChanged();
+        
+        // Add a small delay for smooth animation
+        await Task.Delay(100);
+        
+        // Update visibility of hidden items
+        if (showAllCategories)
+        {
+            await JSRuntime.InvokeVoidAsync("showHiddenItems", ".category-item-hidden", "category-item-visible");
+        }
+        else
+        {
+            await JSRuntime.InvokeVoidAsync("hideExtraItems", ".category-card-redesign", initialCategoryCount, "category-item-hidden");
+        }
+    }
+
+    private async Task ToggleShowAllFeaturedProducts(string categoryId)
+    {
+        var categoryName = categoryId == "all" ? "all" : categories?.FirstOrDefault(c => c.CategoryId.ToString() == categoryId)?.CategoryName ?? "all";
+        Navigation.NavigateTo($"/products/{categoryName}", forceLoad: true);
+    }
+
+    private IEnumerable<CategoryVM> GetVisibleCategories()
+    {
+        if (categories == null) return new List<CategoryVM>();
+        
+        if (showAllCategories)
+        {
+            return categories;
+        }
+        
+        return categories.Take(initialCategoryCount);
+    }
+
+    private IEnumerable<PrdVMWithImages> GetVisibleFeaturedProducts()
+    {
+        if (filteredProducts == null) return new List<PrdVMWithImages>();
+        
+        if (showAllFeaturedProducts)
+        {
+            return filteredProducts;
+        }
+        
+        return filteredProducts.Take(initialFeaturedCount);
+    }
+}
+<script>
+    window.showHiddenItems = (hiddenSelector, visibleClass) => {
+        const hiddenItems = document.querySelectorAll(hiddenSelector);
+        hiddenItems.forEach((item, index) => {
+            setTimeout(() => {
+                item.classList.remove('category-item-hidden', 'featured-item-hidden');
+                item.classList.add(visibleClass);
+                item.style.display = item.classList.contains('featured-product-card') ? 'flex' : 'block';
+            }, index * 100);
+        });
+    };
+
+    window.hideExtraItems = (itemSelector, keepCount, hiddenClass) => {
+        const items = document.querySelectorAll(itemSelector);
+        items.forEach((item, index) => {
+            if (index >= keepCount) {
+                item.classList.add(hiddenClass);
+                item.classList.remove('category-item-visible', 'featured-item-visible');
+                setTimeout(() => {
+                    item.style.display = 'none';
+                }, 300);
+            }
+        });
+    };
+</script>
