@@ -305,10 +305,3 @@ This project is licensed under the **MIT License**. See [LICENSE](LICENSE) file 
 - **Apache Kafka** - Reliable event streaming
 - **YARP** - .NET reverse proxy
 
----
-
-⭐ **If this project is helpful, please give us a Star!** ⭐
-
-**Made with ❤️ by [NGUYEN CONG HUAN](https://github.com/huanop3)**
-
-*Last updated: June 2025*
